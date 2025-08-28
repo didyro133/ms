@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Achievement } from '../types';
+import { mockAchievements } from '../data/mockData';
 import { Trophy, Plus, Edit, Trash2, Target, Coins, User, Check, X, AlertCircle } from 'lucide-react';
 
 const Achievements: React.FC = () => {
@@ -32,19 +33,38 @@ const Achievements: React.FC = () => {
     u.role === 'student' && currentUser?.studentIds?.includes(u.id)
   ) || [];
 
-  // Load achievements from localStorage
+  // Load achievements from localStorage (for mentors) or get all achievements (for students)
   useEffect(() => {
-    const stored = localStorage.getItem('mentorAchievements');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const mentorAchievements = parsed.filter((a: Achievement & { createdBy: string }) => 
-          a.createdBy === currentUser?.id
-        );
-        setAchievements(mentorAchievements);
-      } catch {
-        setAchievements([]);
+    if (currentUser?.role === 'mentor') {
+      // Mentors see only their created achievements
+      const stored = localStorage.getItem('mentorAchievements');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const mentorAchievements = parsed.filter((a: Achievement & { createdBy: string }) => 
+            a.createdBy === currentUser?.id
+          );
+          setAchievements(mentorAchievements);
+        } catch {
+          setAchievements([]);
+        }
       }
+    } else if (currentUser?.role === 'student') {
+      // Students see all achievements (default + mentor-created)
+      const stored = localStorage.getItem('mentorAchievements');
+      let mentorAchievements: Achievement[] = [];
+      
+      if (stored) {
+        try {
+          mentorAchievements = JSON.parse(stored);
+        } catch {
+          mentorAchievements = [];
+        }
+      }
+      
+      // Combine default achievements with mentor-created ones
+      const allAchievements = [...mockAchievements, ...mentorAchievements];
+      setAchievements(allAchievements);
     }
   }, [currentUser?.id]);
 
@@ -76,6 +96,8 @@ const Achievements: React.FC = () => {
 
   // Check and award automatic achievements
   useEffect(() => {
+    if (currentUser?.role !== 'mentor') return;
+    
     const checkAutoAchievements = () => {
       achievements.forEach(achievement => {
         if (achievement.type === 'manual') return;
@@ -244,7 +266,8 @@ const Achievements: React.FC = () => {
     student.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (currentUser?.role !== 'mentor') {
+  // Student view - show all achievements with earned status
+  if (currentUser?.role === 'student') {
     return (
       <div className="space-y-8">
         <div className="backdrop-blur-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 border border-white/20">
@@ -253,11 +276,148 @@ const Achievements: React.FC = () => {
             <span>Achievements</span>
           </h1>
           <p className="text-white/80">Track your progress and unlock rewards</p>
+          
+          {/* Student Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <Trophy className="text-yellow-400" size={24} />
+                <div>
+                  <p className="text-white/70 text-sm">Earned</p>
+                  <p className="text-2xl font-bold text-white">{currentUser?.achievements.length || 0}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <Target className="text-blue-400" size={24} />
+                <div>
+                  <p className="text-white/70 text-sm">Available</p>
+                  <p className="text-2xl font-bold text-white">{achievements.length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <span className="text-purple-400 text-lg">📈</span>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm">Progress</p>
+                  <p className="text-2xl font-bold text-white">
+                    {achievements.length > 0 ? Math.round((currentUser?.achievements.length || 0) / achievements.length * 100) : 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Achievements Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {achievements.map((achievement) => {
+            const isEarned = currentUser?.achievements.includes(achievement.id) || false;
+            
+            return (
+              <div
+                key={achievement.id}
+                className={`backdrop-blur-xl bg-gradient-to-br ${getRarityColor(achievement.rarity)} rounded-2xl p-6 border transition-all hover:scale-105 ${
+                  isEarned ? 'ring-2 ring-yellow-400/50' : 'opacity-75'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`text-3xl ${isEarned ? '' : 'grayscale'}`}>{achievement.icon}</div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">{achievement.name}</h3>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {getTypeIcon(achievement.type || 'manual')}
+                        <span className="text-white/70 text-sm capitalize">
+                          {achievement.type || 'manual'}
+                          {achievement.targetValue && ` (${achievement.targetValue})`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {isEarned && (
+                    <div className="bg-yellow-400/20 rounded-full p-2">
+                      <Check className="text-yellow-400" size={16} />
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-white/80 text-sm mb-4">{achievement.description}</p>
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <span className="text-blue-400">⚡</span>
+                      <span className="text-white text-sm">{achievement.xpReward} XP</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Coins className="text-yellow-400" size={14} />
+                      <span className="text-white text-sm">{achievement.coinReward}</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    achievement.rarity === 'common' ? 'bg-gray-500/20 text-gray-400' :
+                    achievement.rarity === 'rare' ? 'bg-blue-500/20 text-blue-400' :
+                    achievement.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                  }`}>
+                    {achievement.rarity}
+                  </span>
+                </div>
+
+                {/* Progress for automatic achievements */}
+                {achievement.type === 'xp' && !isEarned && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/70 text-sm">XP Progress</span>
+                      <span className="text-white/70 text-sm">{currentUser?.xp || 0}/{achievement.targetValue}</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-400 to-purple-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((currentUser?.xp || 0) / (achievement.targetValue || 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {achievement.type === 'coins' && !isEarned && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/70 text-sm">Coins Progress</span>
+                      <span className="text-white/70 text-sm">{currentUser?.coins || 0}/{achievement.targetValue}</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-yellow-400 to-orange-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((currentUser?.coins || 0) / (achievement.targetValue || 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {achievements.length === 0 && (
+          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-12 border border-white/20 text-center">
+            <Trophy className="text-white/30 mx-auto mb-6" size={64} />
+            <h3 className="text-xl font-bold text-white mb-4">No Achievements Available</h3>
+            <p className="text-white/70 mb-6">
+              Your mentors haven't created any achievements yet.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
+  // Mentor view - achievement management dashboard
   return (
     <div className="space-y-8">
       {/* Header */}
