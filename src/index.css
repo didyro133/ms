@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.slide-in-from-top-2 {
+  animation-name: slide-in-from-top;
+}
+
+@keyframes subtle-wave {
+  0% { transform: translate(0, 0); opacity: 0.3; }
+  25% { transform: translate(3px, -2px); opacity: 0.6; }
+  50% { transform: translate(0, -4px); opacity: 0.4; }
+  75% { transform: translate(-3px, -2px); opacity: 0.6; }
+  100% { transform: translate(0, 0); opacity: 0.3; }
+}
+
+.waving-dots-container {
+  position: relative;
+  display: inline-block;
+}
+
+.waving-dot {
+  position: absolute;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  animation: subtle-wave 4s ease-in-out infinite;
+}
+
+.dot-1 {
+  top: -6px;
+  left: -8px;
+  animation-delay: 0s;
+}
+
+.dot-2 {
+  top: -6px;
+  right: -8px;
+  animation-delay: 1s;
+}
+
+.dot-3 {
+  bottom: -6px;
+  left: -8px;
+  animation-delay: 2s;
+}
+
+.dot-4 {
+  bottom: -6px;
+  right: -8px;
+  animation-delay: 3s;
+}
