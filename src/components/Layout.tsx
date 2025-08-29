@@ -236,7 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" 
                           onClick={() => setShowProfileDropdown(false)}
                         />
-                        <div 
+                        <div className="absolute right-0 top-full mt-2 w-80 backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 shadow-2xl z-50">
                           {/* Profile Header */}
                           <div className="p-4 border-b border-white/20">
                             <div className="flex items-center space-x-3">
@@ -388,7 +388,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
             })}
           </div>
         </div>
-      </div>
+
         {/* Edit Profile Modal */}
         {showEditProfile && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -530,6 +530,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
           </div>
         )}
 
+      </div>
     </div>
   );
 };
