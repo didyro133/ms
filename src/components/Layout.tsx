@@ -231,11 +231,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                     {/* Profile Dropdown */}
                     {showProfileDropdown && (
                       <>
+                        {/* Blurry Background Overlay */}
                         <div 
-                          className="fixed inset-0 z-40" 
+                          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" 
                           onClick={() => setShowProfileDropdown(false)}
                         />
-                        <div className="absolute right-0 top-full mt-2 w-80 backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 shadow-2xl z-50 animate-in slide-in-from-top-2 duration-200">
+                        <div 
                           {/* Profile Header */}
                           <div className="p-4 border-b border-white/20">
                             <div className="flex items-center space-x-3">
